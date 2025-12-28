@@ -7,12 +7,17 @@ PLOTS_DIR = "plots"
 
 os.makedirs(PLOTS_DIR, exist_ok=True)
 
-csv_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith(".csv")]
+csv_files = []
+for root, _, files in os.walk(RESULTS_DIR):
+    for file in files:
+        if file.endswith(".csv"):
+            csv_files.append(os.path.join(root, file))
+
 
 for csv in csv_files:
     df = pd.read_csv(os.path.join(RESULTS_DIR, csv))
 
-    name = csv.replace(".csv", "")
+    name = os.path.basename(csv).replace(".csv", "")
 
     # ---- Performance Metrics ----
     plt.figure()
