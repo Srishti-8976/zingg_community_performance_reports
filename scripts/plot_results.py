@@ -39,4 +39,6 @@ for csv in csv_files:
         plt.ylabel("Time (seconds)")
         plt.savefig(f"{PLOTS_DIR}/{name}_runtime.png")
         plt.close()
+    
+# trigger workflow
 
