@@ -32,10 +32,17 @@ jobs:
       - name: Generate plots
         run: python scripts/plot_results.py
 
-      - name: Commit generated plots
+      - name: Commit generated plots (if any)
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add plots/
-          git commit -m "Auto-generate benchmark plots" || echo "No changes"
-          git push
+      
+          if git diff --cached --quiet; then
+            echo "No plot changes to commit"
+          else
+            git commit -m "Auto-generate benchmark plots"
+            git pull --rebase
+            git push
+          fi
+
