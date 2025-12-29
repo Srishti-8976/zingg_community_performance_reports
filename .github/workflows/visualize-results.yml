@@ -24,6 +24,11 @@ jobs:
       - name: Install dependencies
         run: pip install pandas matplotlib
 
+      - name: Check generated CSV files
+        run: |
+          echo "Listing all CSV files:"
+          find . -name "*.csv"
+
       - name: Generate plots
         run: python scripts/plot_results.py
 
