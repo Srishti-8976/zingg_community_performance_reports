@@ -1,62 +1,39 @@
-import os
+from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Paths
-PERF_REPO_RESULTS = "../zingg_performance/results"
-PLOTS_DIR = "plots"
+CSV_DIR = Path("zingg_performance_repo/results")
 
-os.makedirs(PLOTS_DIR, exist_ok=True)
-
-# Collect all CSV files
-csv_files = []
-for root, _, files in os.walk(PERF_REPO_RESULTS):
-    for f in files:
-        if f.endswith(".csv"):
-            csv_files.append(os.path.join(root, f))
+csv_files = list(CSV_DIR.glob("*.csv"))
 
 if not csv_files:
-    raise RuntimeError("No CSV files found in zingg_performance/results")
+    raise RuntimeError(f"No CSV files found in {CSV_DIR.resolve()}")
 
-# Load and combine CSVs
-dfs = []
-for csv in csv_files:
-    try:
-        df = pd.read_csv(csv)
-        dfs.append(df)
-    except Exception as e:
-        print(f"Skipping {csv}: {e}")
+print(f"Found {len(csv_files)} CSV files")
 
-data = pd.concat(dfs, ignore_index=True)
+# Example: plot duration vs timestamp
+durations = []
+labels = []
 
-# Convert date + time to datetime
-data["datetime"] = pd.to_datetime(
-    data["date"] + " " + data["time"],
-    errors="coerce"
-)
-
-data = data.sort_values("datetime")
-
-# Pick numeric columns (performance phases)
-numeric_cols = data.select_dtypes(include="number").columns.tolist()
-
-if not numeric_cols:
-    raise RuntimeError("No numeric columns found for plotting")
-
-# -------- Plot 1: Total runtime trend (sum of phases) --------
-data["total_runtime"] = data[numeric_cols].sum(axis=1)
+for csv_file in sorted(csv_files):
+    df = pd.read_csv(csv_file)
+    durations.append(float(df["duration_sec"].iloc[0]))
+    labels.append(csv_file.stem)
 
 plt.figure()
-plt.plot(data["datetime"], data["total_runtime"])
-plt.xlabel("Run Time")
-plt.ylabel("Total Runtime")
-plt.title("FEBRL Performance Trend")
-plt.xticks(rotation=45)
+plt.plot(labels, durations, marker="o")
+plt.xticks(rotation=45, ha="right")
+plt.ylabel("Duration (seconds)")
+plt.title("FEBRL Performance Over Time")
 plt.tight_layout()
 
-runtime_plot_path = os.path.join(PLOTS_DIR, "febrl_runtime_trend.png")
-plt.savefig(runtime_plot_path)
+OUTPUT_DIR = Path("plots")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+plot_path = OUTPUT_DIR / "febrl_performance.png"
+plt.savefig(plot_path)
 plt.close()
 
-print(f"Saved plot: {runtime_plot_path}")
+print("Plot saved to", plot_path)
+
 
