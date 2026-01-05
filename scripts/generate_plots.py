@@ -1,43 +1,50 @@
-from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 
-CSV_DIR = Path("zingg_performance_repo/results")
-csv_files = sorted(CSV_DIR.glob("*.csv"))
+# Path where performance repo is checked out
+CSV_DIR = Path("zingg_performance/results")
+PLOTS_DIR = Path("plots")
+PLOTS_DIR.mkdir(exist_ok=True)
 
+csv_files = list(CSV_DIR.glob("*.csv"))
 if not csv_files:
-    raise RuntimeError(f"No CSV files found in {CSV_DIR.resolve()}")
+    raise RuntimeError("No CSV files found in zingg_performance/results")
 
-print(f"Found {len(csv_files)} CSV files")
-
-labels = []
+dates = []
 durations = []
 
-for csv_file in csv_files:
+for csv_file in sorted(csv_files):
     df = pd.read_csv(csv_file)
 
-    if "duration_sec" not in df.columns:
+    # REQUIRED columns from perf_csv_writer
+    required_cols = {"date", "time", "test"}
+    if not required_cols.issubset(df.columns):
         raise RuntimeError(
-            f"'duration_sec' column not found in {csv_file.name}. "
-            f"Found columns: {list(df.columns)}"
+            f"CSV format mismatch in {csv_file.name}. Found columns: {list(df.columns)}"
         )
 
-    durations.append(float(df["duration_sec"].iloc[0]))
-    labels.append(csv_file.stem)
+    # Use first numeric column as runtime metric
+    numeric_cols = df.select_dtypes(include="number").columns
+    if len(numeric_cols) == 0:
+        raise RuntimeError(f"No numeric columns found in {csv_file.name}")
+
+    metric_col = numeric_cols[0]
+
+    dates.append(df["date"].iloc[0])
+    durations.append(df[metric_col].iloc[0])
 
 # Plot
-plt.figure(figsize=(10, 5))
-plt.plot(labels, durations, marker="o")
-plt.xticks(rotation=45, ha="right")
-plt.ylabel("Runtime (seconds)")
-plt.title("FEBRL Performance Trend")
+plt.figure(figsize=(8, 4))
+plt.plot(dates, durations, marker="o")
+plt.xlabel("Date")
+plt.ylabel("Runtime")
+plt.title("Zingg FEBRL Performance Trend")
+plt.xticks(rotation=45)
 plt.tight_layout()
 
-OUTPUT_DIR = Path("plots")
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-plot_path = OUTPUT_DIR / "febrl_performance.png"
-plt.savefig(plot_path)
+output_path = PLOTS_DIR / "febrl_runtime.png"
+plt.savefig(output_path)
 plt.close()
 
-print("Plot saved to:", plot_path)
+print("Plot saved to:", output_path)
