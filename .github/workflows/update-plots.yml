@@ -19,10 +19,11 @@ jobs:
         uses: actions/checkout@v4
 
       # 2️⃣ Checkout zingg_performance (CSV source)
-      - name: Checkout performance repo
+      - name: Checkout performance repo (fork, patch-2)
         uses: actions/checkout@v4
         with:
           repository: Srishti-8976/zingg_performance
+          ref: patch-2
           path: zingg_performance
 
       # 3️⃣ Setup Python
