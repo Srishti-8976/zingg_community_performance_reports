@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # Path where performance repo is checked out
-CSV_DIR = Path("zingg_performance/results")
+CSV_DIR = Path("zingg_performance_repo/results")
 PLOTS_DIR = Path("plots")
 PLOTS_DIR.mkdir(exist_ok=True)
 
