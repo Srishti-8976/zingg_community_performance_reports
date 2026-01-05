@@ -24,7 +24,7 @@ jobs:
         with:
           repository: Srishti-8976/zingg_performance
           ref: patch-2
-          path: zingg_performance
+          path: zingg_performance_repo
 
       # 3️⃣ Setup Python
       - name: Set up Python
