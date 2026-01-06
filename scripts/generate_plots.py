@@ -2,49 +2,59 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-# Path where performance repo is checked out
-CSV_DIR = Path("zingg_performance_repo/results")
+# --------------------------------------------------
+# Paths
+# --------------------------------------------------
+
+PERF_REPO = Path("zingg_performance_repo/results")
 PLOTS_DIR = Path("plots")
 PLOTS_DIR.mkdir(exist_ok=True)
 
-csv_files = list(CSV_DIR.glob("*.csv"))
+csv_files = sorted(PERF_REPO.glob("*.csv"))
+
 if not csv_files:
-    raise RuntimeError("No CSV files found in zingg_performance/results")
+    raise RuntimeError("No CSV files found in zingg_performance_repo/results")
 
-dates = []
-durations = []
+print(f"Found {len(csv_files)} CSV files")
 
-for csv_file in sorted(csv_files):
-    df = pd.read_csv(csv_file)
+# --------------------------------------------------
+# Load & merge CSVs
+# --------------------------------------------------
 
-    # REQUIRED columns from perf_csv_writer
-    required_cols = {"date", "time", "test"}
-    if not required_cols.issubset(df.columns):
-        raise RuntimeError(
-            f"CSV format mismatch in {csv_file.name}. Found columns: {list(df.columns)}"
-        )
+dfs = []
+for csv in csv_files:
+    df = pd.read_csv(csv)
+    df["date"] = pd.to_datetime(df["date"])
+    dfs.append(df)
 
-    # Use first numeric column as runtime metric
-    numeric_cols = df.select_dtypes(include="number").columns
-    if len(numeric_cols) == 0:
-        raise RuntimeError(f"No numeric columns found in {csv_file.name}")
+data = pd.concat(dfs, ignore_index=True)
+data = data.sort_values("date")
 
-    metric_col = numeric_cols[0]
+# --------------------------------------------------
+# Detect numeric metric columns (excluding date)
+# --------------------------------------------------
 
-    dates.append(df["date"].iloc[0])
-    durations.append(df[metric_col].iloc[0])
+numeric_cols = data.select_dtypes(include="number").columns.tolist()
 
-# Plot
-plt.figure(figsize=(8, 4))
-plt.plot(dates, durations, marker="o")
-plt.xlabel("Date")
-plt.ylabel("Runtime")
-plt.title("Zingg FEBRL Performance Trend")
-plt.xticks(rotation=45)
-plt.tight_layout()
+if not numeric_cols:
+    raise RuntimeError("No numeric columns found to plot")
 
-output_path = PLOTS_DIR / "febrl_runtime.png"
-plt.savefig(output_path)
-plt.close()
+print("Numeric metrics found:", numeric_cols)
 
-print("Plot saved to:", output_path)
+# --------------------------------------------------
+# Plot EACH metric vs date
+# --------------------------------------------------
+
+for metric in numeric_cols:
+    plt.figure(figsize=(8, 5))
+    plt.plot(data["date"], data[metric], marker="o")
+    plt.xlabel("Date")
+    plt.ylabel(metric)
+    plt.title(f"{metric} vs Date")
+    plt.grid(True)
+
+    plot_path = PLOTS_DIR / f"{metric}_vs_date.png"
+    plt.savefig(plot_path, bbox_inches="tight")
+    plt.close()
+
+    print(f"Saved plot: {plot_path}")
